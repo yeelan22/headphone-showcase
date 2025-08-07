@@ -13,7 +13,7 @@ export function ParticleField() {
     const st = ScrollTrigger.create({
       trigger: "#features",
       start: "top bottom", // when features enters viewport
-      end: "top 90%",      // adjust this value as needed
+      end: "top 60%",      // adjust this value as needed
       scrub: true,
       onUpdate: (self) => {
         setOpacity(1 - self.progress);
@@ -27,7 +27,7 @@ export function ParticleField() {
     <Sparkles
       count={60}
       scale={[6, 5, 6]}
-      size={5}
+      size={1}
       speed={0.4}
       color="#FFD580"
       noise={1}

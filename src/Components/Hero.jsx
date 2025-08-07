@@ -1,4 +1,4 @@
-import { LightRays } from "./LightRays"
+import LightRays  from  "./LightRays"
 export const Hero = () => {
    return (
     <section className="h-[calc(100vh-72px)] w-full flex items-end">
@@ -9,28 +9,35 @@ export const Hero = () => {
         <div className="flex flex-col text-3xl font-semibold">
             <span>Immersive audio. </span>
             <span>Futuristic design.</span>
-            <span className="text-highlight text-4xl">Unmatched experience.</span>
+            <span className="">Unmatched experience.</span>
         </div>
-         <button
-            className="
-                glass-shine-border
-                relative
-                py-2 px-6
-                rounded-full
-                bg-white/10
-                border border-white/30
-                shadow-[0_4px_24px_0_rgba(0,0,0,0.15)]
-                backdrop-blur-lg
-                transition
-                hover:bg-white/20
-                active:scale-95
-                text-white font-semibold
-                z-10
-                overflow-visible
-            "
-            >
-            <span className="relative z-10">Explore</span>
-        </button>
+      <button
+        className="
+        relative
+        py-2.5 px-8
+        rounded-full
+        bg-[var(--color-background)]
+        border border-[var(--color-primary-accent)]
+        shadow-[0_4px_24px_0_rgba(0,183,194,0.15)]
+        transition
+        hover:bg-[var(--color-secondary-accent)]/20
+        hover:border-[var(--color-secondary-accent)]
+        active:scale-95
+        text-[var(--color-primary-text)] font-semibold
+        text-lg
+        flex items-center gap-2
+        z-10
+        overflow-visible
+        cursor-pointer
+      "
+
+    >
+      <span className="relative z-10">Explore</span>
+      {/* Optional: Add a right arrow icon for emphasis */}
+      <svg className="w-5 h-5 relative z-10 text-[var(--color-highlight)]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+      </svg>
+    </button>
       </div>
     
     </section>

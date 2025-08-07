@@ -1,5 +1,5 @@
 export { Hero } from "./Hero"
 export { Navbar } from "./Navigation"
 export { ParticleField } from "./ParticleField"
-export { LightRays } from "./LightRays"
 export { Features } from "./Features/Features"
+export { Viewer } from "./Viewer"

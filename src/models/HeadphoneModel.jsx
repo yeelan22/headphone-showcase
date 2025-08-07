@@ -1,16 +1,46 @@
-import React, { useRef, useEffect, useState } from 'react'
+import React, { useRef, useEffect, useState, useMemo } from 'react'
 import { useGLTF } from '@react-three/drei'
-import { useFrame } from '@react-three/fiber'
+import { useFrame, useLoader } from '@react-three/fiber'
 import gsap from 'gsap'
 import ScrollTrigger from 'gsap/ScrollTrigger'
-import { Box3, Vector3 } from 'three'
+import { Box3, Vector3, TextureLoader } from 'three'
 
 gsap.registerPlugin(ScrollTrigger)
 
-const HeadphoneModel = () => {
-  const { scene } = useGLTF('src/assets/headphone/appleHeadphone.glb')
+const MODEL_PATH = 'src/assets/headphone/appleHeadphone.glb'
+
+const HeadphoneModel = ({ colorOption, dimmed, animate = true }) => {
+  const { scene: originalScene } = useGLTF(MODEL_PATH)
   const modelRef = useRef()
   const [center, setCenter] = useState(new Vector3(0, 0, 0))
+  const texture = useLoader(TextureLoader, colorOption.img)
+
+  // Clone the scene for each instance
+  const scene = useMemo(() => originalScene.clone(true), [originalScene])
+
+  // Apply texture and dimming
+   useEffect(() => {
+  if (!scene) return;
+  scene.traverse((child) => {
+    if (child.isMesh) {
+      child.material = child.material.clone();
+      // If you want to use a solid color:
+      child.material.map = null;
+      child.material.color.set(colorOption.hex);
+      // If you want to use a texture, comment the above two lines and use:
+      // child.material.map = texture;
+      // child.material.color.set('#fff');
+      child.material.needsUpdate = true;
+      if (dimmed) {
+        // child.material.opacity = 0.5;
+        // child.material.transparent = true;
+      } else {
+        child.material.opacity = 1.0;
+        child.material.transparent = false;
+      }
+    }
+  });
+}, [scene, texture, colorOption, dimmed]);
 
   // Calculate model center
   useEffect(() => {
@@ -21,9 +51,9 @@ const HeadphoneModel = () => {
     setCenter(centerVec)
   }, [scene])
 
-  // Scroll-based animation with timeline
+  // Scroll-based animation with timeline (only for main model, not dimmed)
   useEffect(() => {
-    if (!modelRef.current) return
+    if (!modelRef.current || dimmed || !animate) return
 
     const model = modelRef.current
     model.position.set(-center.x, -center.y, -center.z)
@@ -67,12 +97,40 @@ const HeadphoneModel = () => {
       )
     })
 
-    return () => ctx.revert()
-  }, [center])
+    const tl2 = gsap.timeline({
+      scrollTrigger: {
+        trigger: '#viewer',
+        start: 'top bottom',
+        end: 'top top',
+        scrub: 2,
+      }
+    })
+    tl2.to(model.position, {
+        z: 2 - center.z,
+        duration: 1,
+        ease: 'power2.inOut',
+    })
+    tl2.to(model.rotation, {
+      y: 1,
+      z: 0,
+      x: 0,
+      duration: 1,
+      ease: 'power2.out',
+    })
+    tl2.to(model.position, {
+      z: -2 - center.z,
+      y: center.y,
+      x: center.x,
+      duration: 1,
+      ease: 'power3.out',
+    })
 
-  // Floating idle animation (only in hero)
+    return () => ctx.revert()
+  }, [center, dimmed, animate])
+
+  // Floating idle animation (only in hero, not dimmed)
   useFrame((state) => {
-    if (modelRef.current && window.scrollY < window.innerHeight * 0.9) {
+    if (modelRef.current && !dimmed && animate && window.scrollY < window.innerHeight * 0.9) {
       const floatY = Math.sin(state.clock.elapsedTime * 1.5) * 0.05
       modelRef.current.position.y = -center.y + floatY
     }
@@ -88,5 +146,5 @@ const HeadphoneModel = () => {
   )
 }
 
-useGLTF.preload('src/assets/headphone/appleHeadphone.glb')
+useGLTF.preload(MODEL_PATH)
 export default HeadphoneModel

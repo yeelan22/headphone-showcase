@@ -35,8 +35,8 @@ export const Navbar = () => {
 
       {/* Right section: Icons */}
       <div className="flex items-center gap-4">
-        <User className="w-5 h-5 text-primary-text  hover:text-primary-accent cursor-pointer" />
-        <ShoppingCart className="w-5 h-5 text-primary-text hover:text-primary-accent cursor-pointer" />
+        <User className="w-5 h-5 text-primary-text  hover:text-secondary-accent cursor-pointer" />
+        <ShoppingCart className="w-5 h-5 text-primary-text hover:text-secondary-accent cursor-pointer" />
       </div>
     </nav>
   );
