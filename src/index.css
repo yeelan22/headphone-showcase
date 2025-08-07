@@ -1,1 +1,70 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Sora:wght@100..800&display=swap');
 @import "tailwindcss";
+
+body {
+  background: radial-gradient(ellipse at center, rgba(40,40,45,1) 0%, #0E0E10 100%);
+  color: white;
+  font-family: "Inter";
+  height: 4000px;
+}
+
+@theme {
+  --color-background: #0E0E10;
+  --color-primary-accent: #9FA6B2;
+  --color-secondary-accent: #00B7C2;
+  --color-highlight: #FFD580;
+  --color-primary-text: #F5F5F7;
+  --color-secondary-text: #A0A0A0;
+
+  /* headphones-colors: */
+  --color-darkGray: #484848;
+  --color-silver: #EDEDED;
+}
+
+.heading {
+  @apply text-3xl md:text-4xl font-semibold leading-snug text-primary-text py-6 text-center md:text-start
+}
+.gradient-heading {
+  background: linear-gradient(180deg, #A0A0A0 0%, var(--color-darkGray) 78%, var(--color-darkGray) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text; /* for Firefox */
+  text-fill-color: transparent;
+  font-family: "Poppins", sans-serif;
+}
+
+.glass-shine-border {
+  position: relative;
+  overflow: visible;
+}
+
+.glass-shine-border::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  padding: 1px;
+  pointer-events: none;
+  z-index: 2;
+  background: linear-gradient(120deg, var(--color-silver) 0%, #fff 50%, var(--color-silver) 100%);
+  opacity: 0;
+  transition: opacity 0.2s;
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box, 
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  /* Only show the border, not the fill */
+  box-sizing: border-box;
+  border: solid transparent;
+  /* Animate the shine */
+  animation: borderShinePulse 10.2s infinite;
+}
+
+@keyframes borderShinePulse {
+  0%   { opacity: 0; }
+  10%  { opacity: 1; }
+  40%  { opacity: 0.7; }
+  60%  { opacity: 0; }
+  100% { opacity: 0; }
+}
