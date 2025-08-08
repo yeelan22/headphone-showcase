@@ -4,7 +4,7 @@ export const Viewer = ({ viewerRef, colorOptions, selectedColor, setSelectedColo
 
   return (
     <section id="viewer" ref={viewerRef} className='relative h-screen w-full px-8 py-6'>
-      <p className='heading'>Product Viewer</p>
+      <p className='heading text-center md:text-start'>Product Viewer</p>
       <div className='flex flex-col justify-center items-center absolute left-1/2 bottom-1/32 transform -translate-x-1/2 -translate-y-1/2 z-50'>
         <div className='flex items-center gap-4'>
           <button

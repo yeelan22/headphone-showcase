@@ -1,19 +1,37 @@
+import React, { useState, useEffect } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { Suspense, useRef, useEffect } from 'react';
-import { Environment, OrbitControls } from '@react-three/drei';
+import { Environment, Html, useProgress } from '@react-three/drei';
 import HeadphoneModel from '../models/HeadphoneModel';
 import { ParticleField } from '../Components';
 
-export default function SceneCanvas({ controlsEnabled, selectedColor, prevColor, nextColor, inViewer }) {
-  const controlsRef = useRef();
+function LoaderOverlay() {
+  const { progress } = useProgress();
+  return (
+    <Html center>
+      <div style={{
+        background: '#000',
+        color: '#fff',
+        width: '100vw',
+        height: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: '1.5rem',
+        zIndex: 9999
+      }}>
+        Loading {progress.toFixed(0)}%
+      </div>
+    </Html>
+  );
+}
 
-  useEffect(() => {
-    if (controlsRef.current) {
-      controlsRef.current.target.set(0, 0, 0);
-      controlsRef.current.update();
-    }
-  }, [controlsEnabled]);
-
+export default function SceneCanvas({
+  controlsEnabled,
+  selectedColor,
+  prevColor,
+  nextColor,
+  inViewer,
+}) {
   return (
     <Canvas
       shadows
@@ -23,45 +41,42 @@ export default function SceneCanvas({ controlsEnabled, selectedColor, prevColor,
         top: 0,
         left: 0,
         width: '100vw',
-        height: '100%',
-        zIndex: 0,
+        height: '100vh',
+        zIndex: inViewer ? 5 : 0,
         pointerEvents: controlsEnabled ? 'auto' : 'none',
       }}
     >
       <ambientLight intensity={0.2} />
       <spotLight position={[0, 19, 5]} angle={0.4} intensity={2.5} color="#ffaa55" />
 
-      <Suspense fallback={null}>
+      <React.Suspense fallback={<LoaderOverlay />}>
         <ParticleField />
-        {inViewer ? (
-          <>
-            {/* Left (prev) */}
-            <group position={[-2.5, 0, 0]} scale={[0.7, 0.7, 0.7]}>
-              <HeadphoneModel colorOption={prevColor} dimmed />
-            </group>
-            {/* Center (selected) */}
-            <group position={[0, 0, 0]}  >
-              <HeadphoneModel colorOption={selectedColor} />
-            </group>
-            {/* Right (next) */}
-            <group position={[2.5, 0, 0]} scale={[0.7, 0.7, 0.7]}>
-              <HeadphoneModel colorOption={nextColor} dimmed />
-            </group>
-          </>
-        ) : (
-          <HeadphoneModel colorOption={selectedColor} />
-        )}
-        <Environment preset="warehouse" />
-      </Suspense>
 
-      <OrbitControls
-        ref={controlsRef}
-        enabled={controlsEnabled}
-        enableRotate={controlsEnabled}
-        enablePan={false}
-        enableZoom={false}
-        target={[0, 0, 0]}
-      />
+        <group position={[0, 0, 0]}>
+          {inViewer && (
+            <>
+              <group position={[-2.5, 0, 0]} scale={[0.7, 0.7, 0.7]}>
+                <HeadphoneModel colorOption={prevColor} dimmed />
+              </group>
+
+              <group position={[2.5, 0, 0]} scale={[0.7, 0.7, 0.7]}>
+                <HeadphoneModel colorOption={nextColor} dimmed />
+              </group>
+            </>
+          )}
+
+
+          <group position={[0, 0, 0]}>
+            <HeadphoneModel
+              colorOption={selectedColor}
+              draggable={controlsEnabled} // <-- only draggable when controls are enabled
+            />
+          </group>
+
+        </group>
+
+        <Environment preset="warehouse" />
+      </React.Suspense>
     </Canvas>
   );
 }

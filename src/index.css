@@ -7,6 +7,10 @@ body {
   color: white;
 }
 
+body.loading {
+  overflow: hidden;
+}
+
 @theme {
   --color-background: #0E0E10;
   --color-primary-accent: #9FA6B2;
@@ -21,15 +25,41 @@ body {
 }
 
 .heading {
-  @apply text-3xl md:text-4xl font-semibold leading-snug text-primary-text py-6 text-center md:text-start
+  @apply text-3xl md:text-4xl font-semibold leading-snug text-primary-text py-6 
 }
 .gradient-heading {
-  background: linear-gradient(180deg, #A0A0A0 0%, var(--color-darkGray) 78%, var(--color-darkGray) 100%);
+  background: linear-gradient(180deg, #A0A0A0 0%, var(--color-darkGray) 68%, var(--color-darkGray) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text; /* for Firefox */
   text-fill-color: transparent;
   font-family: "Poppins", sans-serif;
+  opacity: 0.3;
+}
+
+.bg-animated-gradient {
+  background: linear-gradient(90deg, #00B7C2, #F5F5F7, #A0A0A0);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+
+.animate-gradient {
+  background-size: 300% 300%;
+  animation: gradientShift 6s ease infinite;
+}
+
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 60% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
 .glass-shine-border {
