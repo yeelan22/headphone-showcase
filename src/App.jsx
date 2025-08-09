@@ -1,16 +1,13 @@
+
 import { useEffect, useState, useRef } from "react";
 import {
-  Navbar,
-  Hero,
-  Features,
-  Viewer,
-  Footer,
-  CTASection,
+  Navbar, Hero, Features, Viewer, Footer, CTASection
 } from "./Components";
 import SceneCanvas from "./layout/SceneCanvas";
 import LightRays from "./Components/LightRays";
 import { colorOptions } from "./data";
 import "./App.css";
+import { useProgress } from '@react-three/drei';
 
 function clamp(val, min, max) {
   return Math.max(min, Math.min(max, val));
@@ -24,12 +21,56 @@ function getColorIndices(selectedIndex, arr) {
   return { prev, next };
 }
 
+// ✅ LoaderOverlay outside Canvas (safe)
+function LoaderOverlay() {
+  const { progress, active } = useProgress();
+
+  useEffect(() => {
+    document.body.style.overflow = active ? 'hidden' : 'auto';
+    return () => {
+      document.body.style.overflow = 'auto';
+    };
+  }, [active]);
+
+  if (!active) return null;
+
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      width: '100vw',
+      height: '100vh',
+      backgroundColor: '#000',
+      color: '#fff',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: '1.5rem',
+      zIndex: 9999,
+      pointerEvents: 'all',
+    }}>
+      Loading {progress.toFixed(0)}%
+    </div>
+  );
+}
+
 function App() {
   const [fade, setFade] = useState(0);
   const [controlsEnabled, setControlsEnabled] = useState(false);
   const [selectedColor, setSelectedColor] = useState(INITIAL_COLOR);
   const [raysOrigin, setRaysOrigin] = useState("top-center");
   const viewerRef = useRef(null);
+
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
+  const { active } = useProgress();
+
+  useEffect(() => {
+    if (!active && !hasLoadedOnce) {
+      setHasLoadedOnce(true);
+    }
+  }, [active, hasLoadedOnce]);
+
 
   useEffect(() => {
     const handleScroll = () => {
@@ -55,7 +96,6 @@ function App() {
         if (!el) return;
         const rect = el.getBoundingClientRect();
         const inView = rect.top < windowH * 0.6 && rect.bottom > windowH * 0.4;
-
         if (inView && origin) {
           newOrigin = origin;
         }
@@ -93,7 +133,10 @@ function App() {
 
   return (
     <main>
-      {/* Light Rays Background (two layers for fade effect) */}
+      {/* ✅ Global Loader */}
+      <LoaderOverlay hasLoadedOnce={hasLoadedOnce}/>
+
+      {/* Light Rays Background */}
       <LightRays
         raysOrigin={raysOrigin}
         raysColor="var(--color-secondary-accent)"
@@ -138,12 +181,8 @@ function App() {
 
       {/* Content Sections */}
       <Navbar />
-      <div id="hero">
-        <Hero />
-      </div>
-      <div id="features">
-        <Features />
-      </div>
+      <div id="hero"><Hero /></div>
+      <div id="features"><Features /></div>
       <div id="viewer">
         <Viewer
           viewerRef={viewerRef}
@@ -154,9 +193,7 @@ function App() {
           next={next}
         />
       </div>
-      <div id="cta">
-        <CTASection />
-      </div>
+      <div id="cta"><CTASection /></div>
       <Footer />
     </main>
   );

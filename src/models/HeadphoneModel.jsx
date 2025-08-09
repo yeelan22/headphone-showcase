@@ -1,46 +1,30 @@
 import React, { useRef, useEffect, useState, useMemo } from 'react';
-import { useGLTF } from '@react-three/drei';
-import { useFrame, useLoader } from '@react-three/fiber';
+import { useGLTF, useProgress } from '@react-three/drei';
+import { useFrame } from '@react-three/fiber';
 import gsap from 'gsap';
 import ScrollTrigger from 'gsap/ScrollTrigger';
-import { Box3, Vector3, TextureLoader } from 'three';
+import { Box3, Vector3, Color } from 'three';
 
 gsap.registerPlugin(ScrollTrigger);
 
 const MODEL_PATH = 'src/assets/headphone/appleHeadphone.glb';
 
+// ⛔ Mesh names that should NOT be colored
+const EXCLUDED_MESHES = ['Headrest_Metallic_0'];
+
 const HeadphoneModel = ({ colorOption, dimmed, animate = true, draggable = false }) => {
   const { scene: originalScene } = useGLTF(MODEL_PATH);
-
-  const modelRef = useRef();
-  const [center, setCenter] = useState(new Vector3(0, 0, 0));
-  const texture = useLoader(TextureLoader, colorOption.img);
-
   const scene = useMemo(() => originalScene.clone(true), [originalScene]);
 
-  // Apply color
-  useEffect(() => {
-    if (!scene) return;
+  const modelRef = useRef();
+  const velocityRef = useRef({ x: 0, y: 0 });
 
-    scene.traverse((child) => {
-      if (child.isMesh) {
-        child.material = child.material.clone();
-        child.material.map = null;
-        child.material.color.set(colorOption.hex);
-        child.material.needsUpdate = true;
+  const [center, setCenter] = useState(new Vector3(0, 0, 0));
+  const [ready, setReady] = useState(false);
 
-        if (dimmed) {
-          // child.material.opacity = 0.5;
-          // child.material.transparent = true;
-        } else {
-          child.material.opacity = 1.0;
-          child.material.transparent = false;
-        }
-      }
-    });
-  }, [scene, texture, colorOption, dimmed]);
+  const { active: isLoading } = useProgress();
 
-  // Center the model
+  // Compute center of model
   useEffect(() => {
     if (!scene) return;
     const box = new Box3().setFromObject(scene);
@@ -49,9 +33,122 @@ const HeadphoneModel = ({ colorOption, dimmed, animate = true, draggable = false
     setCenter(centerVec);
   }, [scene]);
 
-  const velocityRef = useRef({ x: 0, y: 0 });
+  // Assign materials & fade in
+  useEffect(() => {
+    if (!scene || !ready) return;
 
-  // Drag behavior
+    scene.traverse((child) => {
+      if (child.isMesh && child.material) {
+        if (EXCLUDED_MESHES.includes(child.name)) return;
+
+        child.material = child.material.clone();
+        child.material.map = null ; // Remove texture if any
+        child.material.color.set(colorOption.hex);
+        child.material.needsUpdate = true;
+      }
+    });
+  }, [scene, colorOption.hex, ready]);
+
+  // Animate color change smoothly
+  useEffect(() => {
+    if (!modelRef.current || !ready) return;
+
+    modelRef.current.traverse((child) => {
+      if (child.isMesh && child.material) {
+        if (EXCLUDED_MESHES.includes(child.name)) return;
+
+        const targetColor = new Color(colorOption.hex);
+        gsap.to(child.material.color, {
+          r: targetColor.r,
+          g: targetColor.g,
+          b: targetColor.b,
+          duration: 0.8,
+          ease: 'power2.out',
+        });
+      }
+    });
+  }, [colorOption.hex, ready]);
+
+  // Initial transform setup
+  useEffect(() => {
+    const model = modelRef.current;
+    if (!model) return;
+
+    model.position.set(-center.x, -center.y, -center.z);
+    model.rotation.set(0, 1.75, 0);
+    model.scale.set(1.1, 1.1, 1.1);
+
+    const timeout = setTimeout(() => setReady(true), 100);
+    return () => clearTimeout(timeout);
+  }, [center]);
+
+  // GSAP scroll-triggered animation
+  useEffect(() => {
+    if (!modelRef.current || dimmed || !animate || !ready) return;
+
+    const model = modelRef.current;
+
+    const ctx = gsap.context(() => {
+      gsap.timeline({
+        scrollTrigger: {
+          trigger: '#hero',
+          start: 'top top',
+          endTrigger: '#viewer',
+          end: 'top top',
+          scrub: 2,
+        },
+      })
+        .to(model.position, {
+          x: -3 + center.x,
+          z: -1 - center.z,
+          y: -center.y,
+          ease: 'power2.inOut',
+        }, 0)
+        .to(model.rotation, {
+          y: -0.9,
+          x: -0.02,
+          ease: 'power2.out',
+        }, 0)
+        .to(model.position, {
+          x: center.x,
+          y: center.y,
+          z: -2 - center.z,
+          ease: 'power2.out',
+        }, 0.6)
+        .to(model.rotation, {
+          y: 1,
+          x: 0,
+          z: 0,
+          ease: 'power2.out',
+        }, 0.6);
+    });
+
+    return () => ctx.revert();
+  }, [center, dimmed, animate, ready]);
+
+  // Floating + Dragging
+  useFrame((state) => {
+    const model = modelRef.current;
+    if (!model || dimmed || !animate) return;
+
+    const floatY = Math.sin(state.clock.elapsedTime * 1.5) * 0.05;
+    model.position.y += floatY * 0.05;
+
+    if (draggable) {
+      const { x, y } = velocityRef.current;
+      model.rotation.y += x;
+      model.rotation.x += y;
+
+      if (state.pointer?.shiftKey) {
+        model.rotation.z += x;
+      }
+
+      velocityRef.current.x *= 0.9;
+      velocityRef.current.y *= 0.9;
+    }
+  });
+
+  // Handle drag behavior
   useEffect(() => {
     if (!draggable || !modelRef.current) return;
 
@@ -90,87 +187,17 @@ const HeadphoneModel = ({ colorOption, dimmed, animate = true, draggable = false
     };
   }, [draggable]);
 
-  // GSAP scroll animation (one unified timeline)
-  useEffect(() => {
-    if (!modelRef.current || dimmed || !animate) return;
-
-    const model = modelRef.current;
-
-    // Set initial pose
-    model.position.set(-center.x, -center.y, -center.z);
-    model.rotation.set(0, 1.75, 0);
-    model.scale.set(1.1, 1.1, 1.1); // constant scale
-
-    const ctx = gsap.context(() => {
-      gsap.timeline({
-        scrollTrigger: {
-          trigger: '#hero', // start from hero
-          start: 'top top',
-          endTrigger: '#viewer',
-          end: 'top top',
-          scrub: 2,
-        },
-      })
-        .to(model.position, {
-          x: -3 + center.x,
-          z: -1 - center.z,
-          y: -center.y,
-          ease: 'power2.inOut',
-        }, 0)
-        .to(model.rotation, {
-          y: -0.9,
-          x: -0.02,
-          ease: 'power2.out',
-        }, 0)
-        .to(model.position, {
-          x: center.x,
-          y: center.y,
-          z: -2 - center.z,
-          ease: 'power2.out',
-        }, 0.6)
-        .to(model.rotation, {
-          y: 1,
-          x: 0,
-          z: 0,
-          ease: 'power2.out',
-        }, 0.6);
-    });
-
-    return () => ctx.revert();
-  }, [center, dimmed, animate]);
-
-  // Floating + Drag
-  useFrame((state) => {
-    const model = modelRef.current;
-    if (!model || dimmed || !animate) return;
-
-    const floatY = Math.sin(state.clock.elapsedTime * 1.5) * 0.05;
-    model.position.y += floatY * 0.05; // gentle, additive float
-
-    // Drag rotation
-    if (draggable) {
-      const { x, y } = velocityRef.current;
-      model.rotation.y += x;
-      model.rotation.x += y;
-
-      if (state.pointer && state.pointer.shiftKey) {
-        model.rotation.z += x;
-      }
-
-      velocityRef.current.x *= 0.9;
-      velocityRef.current.y *= 0.9;
-    }
-  });
-
   return (
     <primitive
       ref={modelRef}
       object={scene}
       scale={1.1}
       position={[-center.x, -center.y, -center.z]}
+      visible={ready}
     />
   );
 };
 
-useGLTF.preload(MODEL_PATH); 
+useGLTF.preload(MODEL_PATH);
+
 export default HeadphoneModel;
