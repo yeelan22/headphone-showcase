@@ -8,8 +8,6 @@ import { Box3, Vector3, Color } from 'three';
 gsap.registerPlugin(ScrollTrigger);
 
 const MODEL_PATH = 'src/assets/headphone/appleHeadphone.glb';
-
-// ⛔ Mesh names that should NOT be colored
 const EXCLUDED_MESHES = ['Headrest_Metallic_0'];
 
 const HeadphoneModel = ({ colorOption, dimmed, animate = true, draggable = false }) => {
@@ -27,36 +25,43 @@ const HeadphoneModel = ({ colorOption, dimmed, animate = true, draggable = false
   // Compute center of model
   useEffect(() => {
     if (!scene) return;
+
     const box = new Box3().setFromObject(scene);
     const centerVec = new Vector3();
     box.getCenter(centerVec);
     setCenter(centerVec);
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        setReady(true);
+      });
+    });
   }, [scene]);
 
-  // Assign materials & fade in
+  // Assign materials
   useEffect(() => {
     if (!scene || !ready) return;
 
     scene.traverse((child) => {
       if (child.isMesh && child.material) {
-        if (EXCLUDED_MESHES.includes(child.name)) return;
-
         child.material = child.material.clone();
-        child.material.map = null ; // Remove texture if any
-        child.material.color.set(colorOption.hex);
+        child.material.map = null;
+        if (!EXCLUDED_MESHES.includes(child.name)) {
+          child.material.color.set(colorOption.hex);
+        }
+        child.material.transparent = true;
+        child.material.opacity = dimmed ? 0 : 1;
         child.material.needsUpdate = true;
       }
     });
-  }, [scene, colorOption.hex, ready]);
+  }, [scene, ready]);
 
-  // Animate color change smoothly
+  // Animate color change
   useEffect(() => {
     if (!modelRef.current || !ready) return;
 
     modelRef.current.traverse((child) => {
-      if (child.isMesh && child.material) {
-        if (EXCLUDED_MESHES.includes(child.name)) return;
-
+      if (child.isMesh && child.material && !EXCLUDED_MESHES.includes(child.name)) {
         const targetColor = new Color(colorOption.hex);
         gsap.to(child.material.color, {
           r: targetColor.r,
@@ -69,23 +74,33 @@ const HeadphoneModel = ({ colorOption, dimmed, animate = true, draggable = false
     });
   }, [colorOption.hex, ready]);
 
-  // Initial transform setup
+  // Fade in/out when dimmed changes
+  useEffect(() => {
+    if (!modelRef.current || !ready) return;
+
+    modelRef.current.traverse((child) => {
+      if (child.isMesh && child.material) {
+        gsap.to(child.material, {
+          opacity: dimmed ? 0 : 1,
+          duration: 0.6,
+          ease: 'power2.out'
+        });
+      }
+    });
+  }, [dimmed, ready]);
+
+  // Initial position
   useEffect(() => {
     const model = modelRef.current;
-    if (!model) return;
-
+    if (!model || !ready || !center) return;
     model.position.set(-center.x, -center.y, -center.z);
     model.rotation.set(0, 1.75, 0);
     model.scale.set(1.1, 1.1, 1.1);
+  }, [center, ready]);
 
-    const timeout = setTimeout(() => setReady(true), 100);
-    return () => clearTimeout(timeout);
-  }, [center]);
-
-  // GSAP scroll-triggered animation
+  // GSAP ScrollTrigger animation — runs even if dimmed
   useEffect(() => {
-    if (!modelRef.current || dimmed || !animate || !ready) return;
-
+    if (!modelRef.current || !animate || !ready) return;
     const model = modelRef.current;
 
     const ctx = gsap.context(() => {
@@ -124,13 +139,12 @@ const HeadphoneModel = ({ colorOption, dimmed, animate = true, draggable = false
     });
 
     return () => ctx.revert();
-  }, [center, dimmed, animate, ready]);
+  }, [center, animate, ready]);
 
-  // Floating + Dragging
+  // Floating effect
   useFrame((state) => {
     const model = modelRef.current;
-    if (!model || dimmed || !animate) return;
-
+    if (!model || !animate) return;
     const floatY = Math.sin(state.clock.elapsedTime * 1.5) * 0.05;
     model.position.y += floatY * 0.05;
 
@@ -138,30 +152,23 @@ const HeadphoneModel = ({ colorOption, dimmed, animate = true, draggable = false
       const { x, y } = velocityRef.current;
       model.rotation.y += x;
       model.rotation.x += y;
-
-      if (state.pointer?.shiftKey) {
-        model.rotation.z += x;
-      }
-
+      if (state.pointer?.shiftKey) model.rotation.z += x;
       velocityRef.current.x *= 0.9;
       velocityRef.current.y *= 0.9;
     }
   });
 
-  // Handle drag behavior
+  // Drag handling
   useEffect(() => {
     if (!draggable || !modelRef.current) return;
-
     let isDragging = false;
-    let lastX = 0;
-    let lastY = 0;
+    let lastX = 0, lastY = 0;
 
     const onPointerDown = (e) => {
       isDragging = true;
       lastX = e.clientX;
       lastY = e.clientY;
     };
-
     const onPointerMove = (e) => {
       if (!isDragging) return;
       const deltaX = e.clientX - lastX;
@@ -171,15 +178,11 @@ const HeadphoneModel = ({ colorOption, dimmed, animate = true, draggable = false
       velocityRef.current.x = deltaX * 0.01;
       velocityRef.current.y = deltaY * 0.01;
     };
-
-    const onPointerUp = () => {
-      isDragging = false;
-    };
+    const onPointerUp = () => { isDragging = false; };
 
     window.addEventListener('pointerdown', onPointerDown);
     window.addEventListener('pointermove', onPointerMove);
     window.addEventListener('pointerup', onPointerUp);
-
     return () => {
       window.removeEventListener('pointerdown', onPointerDown);
       window.removeEventListener('pointermove', onPointerMove);
@@ -199,5 +202,4 @@ const HeadphoneModel = ({ colorOption, dimmed, animate = true, draggable = false
 };
 
 useGLTF.preload(MODEL_PATH);
-
 export default HeadphoneModel;

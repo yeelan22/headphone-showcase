@@ -1,18 +1,41 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { Environment, Preload} from '@react-three/drei';
+import { Environment, Preload } from '@react-three/drei';
 import HeadphoneModel from '../models/HeadphoneModel';
 import { ParticleField } from '../Components';
+import gsap from 'gsap';
 
-
-// No LoaderOverlay here anymore
 export default function SceneCanvas({
   controlsEnabled,
   selectedColor,
   prevColor,
   nextColor,
   inViewer,
+  viewerInView,
 }) {
+  const leftModelRef = useRef();
+  const rightModelRef = useRef();
+  const [dimmed, setDimmed] = useState(true);
+
+  useEffect(() => {
+    setDimmed(!viewerInView);
+  }, [viewerInView]);
+
+  // Animate side models
+  useEffect(() => {
+    if (!leftModelRef.current || !rightModelRef.current) return;
+    gsap.to(leftModelRef.current.position, {
+      x: inViewer ? -3.2 : -10,
+      duration: 1.3,
+      ease: "power3.inOut"
+    });
+    gsap.to(rightModelRef.current.position, {
+      x: inViewer ? 3.2 : 10,
+      duration: 1.3,
+      ease: "power3.inOut"
+    });
+  }, [inViewer]);
+
   return (
     <Canvas
       shadows
@@ -33,27 +56,21 @@ export default function SceneCanvas({
       <React.Suspense fallback={null}>
         <ParticleField />
 
-        <group position={[0, 0, 0]}>
-          {inViewer && (
-            <>
-              <group position={[-2.5, 0, 0]} scale={[0.7, 0.7, 0.7]}>
-                <HeadphoneModel colorOption={prevColor} dimmed />
-              </group>
-              <group position={[2.5, 0, 0]} scale={[0.7, 0.7, 0.7]}>
-                <HeadphoneModel colorOption={nextColor} dimmed />
-              </group>
-            </>
-          )}
+        <group>
+          <group ref={leftModelRef} position={[-10, 0, 0]} scale={[0.4, 0.4, 0.4]}>
+            <HeadphoneModel colorOption={prevColor} dimmed={dimmed} />
+          </group>
+          <group ref={rightModelRef} position={[10, 0, 0]} scale={[0.4, 0.4, 0.4]}>
+            <HeadphoneModel colorOption={nextColor} dimmed={dimmed} />
+          </group>
           <group position={[0, 0, 0]}>
-            <HeadphoneModel
-              colorOption={selectedColor}
-              draggable={controlsEnabled}
-            />
+            <HeadphoneModel colorOption={selectedColor} draggable={controlsEnabled} />
           </group>
         </group>
 
         <Environment preset="warehouse" />
       </React.Suspense>
+
       <Preload all />
     </Canvas>
   );

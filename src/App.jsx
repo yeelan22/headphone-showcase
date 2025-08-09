@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useRef } from "react";
 import {
   Navbar, Hero, Features, Viewer, Footer, CTASection
@@ -14,41 +13,26 @@ function clamp(val, min, max) {
 }
 
 const INITIAL_COLOR = colorOptions[0];
-
 function getColorIndices(selectedIndex, arr) {
   const prev = (selectedIndex - 1 + arr.length) % arr.length;
   const next = (selectedIndex + 1) % arr.length;
   return { prev, next };
 }
 
-// ✅ LoaderOverlay outside Canvas (safe)
 function LoaderOverlay() {
   const { progress, active } = useProgress();
-
   useEffect(() => {
     document.body.style.overflow = active ? 'hidden' : 'auto';
-    return () => {
-      document.body.style.overflow = 'auto';
-    };
+    return () => { document.body.style.overflow = 'auto'; };
   }, [active]);
 
   if (!active) return null;
-
   return (
     <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      width: '100vw',
-      height: '100vh',
-      backgroundColor: '#000',
-      color: '#fff',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      fontSize: '1.5rem',
-      zIndex: 9999,
-      pointerEvents: 'all',
+      position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
+      backgroundColor: '#000', color: '#fff', display: 'flex',
+      alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem',
+      zIndex: 9999
     }}>
       Loading {progress.toFixed(0)}%
     </div>
@@ -60,17 +44,11 @@ function App() {
   const [controlsEnabled, setControlsEnabled] = useState(false);
   const [selectedColor, setSelectedColor] = useState(INITIAL_COLOR);
   const [raysOrigin, setRaysOrigin] = useState("top-center");
+  const [viewerInView, setViewerInView] = useState(false);
+
   const viewerRef = useRef(null);
-
-  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
-  const { active } = useProgress();
-
-  useEffect(() => {
-    if (!active && !hasLoadedOnce) {
-      setHasLoadedOnce(true);
-    }
-  }, [active, hasLoadedOnce]);
-
+  const selectedIndex = colorOptions.findIndex(c => c.name === selectedColor.name);
+  const { prev, next } = getColorIndices(selectedIndex, colorOptions);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -87,38 +65,34 @@ function App() {
       ];
 
       let newOrigin = "top-center";
-      let viewerInView = false;
       let progressFade = 0;
-
       const windowH = window.innerHeight;
 
       sections.forEach(({ el, origin }) => {
         if (!el) return;
         const rect = el.getBoundingClientRect();
         const inView = rect.top < windowH * 0.6 && rect.bottom > windowH * 0.4;
-        if (inView && origin) {
-          newOrigin = origin;
-        }
+        if (inView && origin) newOrigin = origin;
       });
 
       if (features) {
         const rect = features.getBoundingClientRect();
         const start = windowH * 0.8;
         const end = windowH * 0.2;
-        let progress = (start - rect.top) / (start - end);
-        progressFade = clamp(progress, 0, 1);
+        progressFade = clamp((start - rect.top) / (start - end), 0, 1);
       }
 
       if (viewer) {
         const rect = viewer.getBoundingClientRect();
-        viewerInView = rect.top < windowH * 0.6 && rect.bottom > windowH * 0.4;
+        // Start visibility earlier
+        const inView = rect.top < windowH * 0.9 && rect.bottom > windowH * 0.1;
+        setViewerInView(inView);
+        setControlsEnabled(inView);
+        if (!inView) setSelectedColor(INITIAL_COLOR);
       }
 
       setFade(progressFade);
       setRaysOrigin(newOrigin);
-      setControlsEnabled(viewerInView);
-
-      if (!viewerInView) setSelectedColor(INITIAL_COLOR);
     };
 
     window.addEventListener("scroll", handleScroll);
@@ -126,72 +100,35 @@ function App() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const selectedIndex = colorOptions.findIndex(
-    (c) => c.name === selectedColor.name
-  );
-  const { prev, next } = getColorIndices(selectedIndex, colorOptions);
-
   return (
     <main>
-      {/* ✅ Global Loader */}
-      <LoaderOverlay hasLoadedOnce={hasLoadedOnce}/>
+      <LoaderOverlay />
 
-      {/* Light Rays Background */}
-      <LightRays
-        raysOrigin={raysOrigin}
-        raysColor="var(--color-secondary-accent)"
-        raysSpeed={1}
-        lightSpread={1.2}
-        rayLength={2}
-        pulsating={true}
-        fadeDistance={1.0}
-        saturation={1.0}
-        followMouse={true}
-        mouseInfluence={0.1}
-        noiseAmount={0.0}
-        distortion={0.0}
-        opacity={1 - fade}
-        zIndex={-5}
-      />
-      <LightRays
-        raysOrigin={raysOrigin}
-        raysColor="var(--color-secondary-accent)"
-        raysSpeed={1}
-        lightSpread={1.2}
-        rayLength={2}
-        pulsating={true}
-        fadeDistance={1.0}
-        saturation={1.0}
-        followMouse={true}
-        mouseInfluence={0.1}
-        noiseAmount={0.0}
-        distortion={0.0}
-        opacity={fade}
-        zIndex={-4}
-      />
+      <LightRays raysOrigin={raysOrigin} raysColor="var(--color-secondary-accent)"
+        raysSpeed={1} lightSpread={1.2} rayLength={2} pulsating fadeDistance={1.0}
+        saturation={1.0} followMouse mouseInfluence={0.1} noiseAmount={0}
+        distortion={0} opacity={1 - fade} zIndex={-5} />
+      <LightRays raysOrigin={raysOrigin} raysColor="var(--color-secondary-accent)"
+        raysSpeed={1} lightSpread={1.2} rayLength={2} pulsating fadeDistance={1.0}
+        saturation={1.0} followMouse mouseInfluence={0.1} noiseAmount={0}
+        distortion={0} opacity={fade} zIndex={-4} />
 
-      {/* 3D Scene */}
       <SceneCanvas
         controlsEnabled={controlsEnabled}
         selectedColor={colorOptions[selectedIndex]}
         prevColor={colorOptions[prev]}
         nextColor={colorOptions[next]}
         inViewer={controlsEnabled}
+        viewerInView={viewerInView}
       />
 
-      {/* Content Sections */}
       <Navbar />
       <div id="hero"><Hero /></div>
       <div id="features"><Features /></div>
       <div id="viewer">
-        <Viewer
-          viewerRef={viewerRef}
-          colorOptions={colorOptions}
-          selectedColor={selectedColor}
-          setSelectedColor={setSelectedColor}
-          prev={prev}
-          next={next}
-        />
+        <Viewer viewerRef={viewerRef} colorOptions={colorOptions}
+          selectedColor={selectedColor} setSelectedColor={setSelectedColor}
+          prev={prev} next={next} />
       </div>
       <div id="cta"><CTASection /></div>
       <Footer />
