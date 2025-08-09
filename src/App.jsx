@@ -71,7 +71,7 @@ function App() {
       sections.forEach(({ el, origin }) => {
         if (!el) return;
         const rect = el.getBoundingClientRect();
-        const inView = rect.top < windowH * 0.6 && rect.bottom > windowH * 0.4;
+        const inView = rect.top < windowH * 0.6 && rect.bottom > windowH * 0.8;
         if (inView && origin) newOrigin = origin;
       });
 
@@ -85,7 +85,7 @@ function App() {
       if (viewer) {
         const rect = viewer.getBoundingClientRect();
         // Start visibility earlier
-        const inView = rect.top < windowH * 0.9 && rect.bottom > windowH * 0.1;
+        const inView = rect.top < windowH * 0.5 && rect.bottom > windowH * 0.5;
         setViewerInView(inView);
         setControlsEnabled(inView);
         if (!inView) setSelectedColor(INITIAL_COLOR);
@@ -123,14 +123,13 @@ function App() {
       />
 
       <Navbar />
-      <div id="hero"><Hero /></div>
-      <div id="features"><Features /></div>
-      <div id="viewer">
-        <Viewer viewerRef={viewerRef} colorOptions={colorOptions}
+      <Hero />
+      <Features />
+      <Viewer viewerRef={viewerRef} colorOptions={colorOptions}
           selectedColor={selectedColor} setSelectedColor={setSelectedColor}
           prev={prev} next={next} />
-      </div>
-      <div id="cta"><CTASection /></div>
+      
+      <CTASection />
       <Footer />
     </main>
   );
