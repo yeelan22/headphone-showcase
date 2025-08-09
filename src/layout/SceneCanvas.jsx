@@ -25,12 +25,12 @@ export default function SceneCanvas({
   useEffect(() => {
     if (!leftModelRef.current || !rightModelRef.current) return;
     gsap.to(leftModelRef.current.position, {
-      x: inViewer ? -3.2 : -10,
+      x: inViewer ? -3.2 : -6,
       duration: 1.3,
       ease: "power3.inOut"
     });
     gsap.to(rightModelRef.current.position, {
-      x: inViewer ? 3.2 : 10,
+      x: inViewer ? 3.2 : 6,
       duration: 1.3,
       ease: "power3.inOut"
     });
@@ -57,10 +57,10 @@ export default function SceneCanvas({
         <ParticleField />
 
         <group>
-          <group ref={leftModelRef} position={[-10, 0, 0]} scale={[0.4, 0.4, 0.4]}>
+          <group ref={leftModelRef} position={[-6, 0, 0]} scale={[0.4, 0.4, 0.4]}>
             <HeadphoneModel colorOption={prevColor} dimmed={dimmed} />
           </group>
-          <group ref={rightModelRef} position={[10, 0, 0]} scale={[0.4, 0.4, 0.4]}>
+          <group ref={rightModelRef} position={[6, 0, 0]} scale={[0.4, 0.4, 0.4]}>
             <HeadphoneModel colorOption={nextColor} dimmed={dimmed} />
           </group>
           <group position={[0, 0, 0]}>

@@ -1,8 +1,9 @@
-import spaceGrayColor from './assets/headphone/textures/gray.png'
-import silverColor from './assets/headphone/textures/white.png'
-import skyBlueColor from './assets/headphone/textures/blue.png'
-import greenColor from './assets/headphone/textures/green.png'
-import pinkColor from './assets/headphone/textures/pink.png'
+import pinkColor from "../public/assets/headphone/textures/pink.png"
+import greenColor from "../public/assets/headphone/textures/green.png"
+import skyBlueColor from "../public/assets/headphone/textures/blue.png"
+import silverColor from "../public/assets/headphone/textures/white.png"
+import spaceGrayColor from "../public/assets/headphone/textures/gray.png"
+
 
 export const features = [
   {

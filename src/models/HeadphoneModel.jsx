@@ -7,7 +7,7 @@ import { Box3, Vector3, Color } from 'three';
 
 gsap.registerPlugin(ScrollTrigger);
 
-const MODEL_PATH = 'src/assets/headphone/appleHeadphone.glb';
+const MODEL_PATH = '/assets/headphone/appleHeadphone.glb';
 const EXCLUDED_MESHES = ['Headrest_Metallic_0'];
 
 const HeadphoneModel = ({ colorOption, dimmed, animate = true, draggable = false }) => {
@@ -25,12 +25,10 @@ const HeadphoneModel = ({ colorOption, dimmed, animate = true, draggable = false
   // Compute center of model
   useEffect(() => {
     if (!scene) return;
-
     const box = new Box3().setFromObject(scene);
     const centerVec = new Vector3();
     box.getCenter(centerVec);
     setCenter(centerVec);
-
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         setReady(true);
@@ -38,10 +36,9 @@ const HeadphoneModel = ({ colorOption, dimmed, animate = true, draggable = false
     });
   }, [scene]);
 
-  // Assign materials (unchanged)
+  // Assign materials
   useEffect(() => {
     if (!scene || !ready) return;
-
     scene.traverse((child) => {
       if (child.isMesh && child.material) {
         child.material = child.material.clone();
@@ -56,10 +53,9 @@ const HeadphoneModel = ({ colorOption, dimmed, animate = true, draggable = false
     });
   }, [scene, ready]);
 
-  // Animate color change (unchanged)
+  // Animate color change
   useEffect(() => {
     if (!modelRef.current || !ready) return;
-
     modelRef.current.traverse((child) => {
       if (child.isMesh && child.material && !EXCLUDED_MESHES.includes(child.name)) {
         const targetColor = new Color(colorOption.hex);
@@ -74,158 +70,110 @@ const HeadphoneModel = ({ colorOption, dimmed, animate = true, draggable = false
     });
   }, [colorOption.hex, ready]);
 
-  // Fade in/out when dimmed changes (unchanged)
+  // Fade in/out when dimmed changes
   useEffect(() => {
     if (!modelRef.current || !ready) return;
-
     modelRef.current.traverse((child) => {
       if (child.isMesh && child.material) {
         gsap.to(child.material, {
           opacity: dimmed ? 0 : 1,
           duration: 0.6,
-          ease: 'power2.out'
+          ease: 'power2.out',
         });
       }
     });
   }, [dimmed, ready]);
 
-  // Initial position and scale setup, but scale animates on load
+  // Intro animation (only once when entering hero section)
   useEffect(() => {
     if (!modelRef.current || !ready || !center) return;
 
     const model = modelRef.current;
-
     model.position.set(-center.x, -center.y, -center.z);
-    model.rotation.set(0, 1.75, 0);
-    // Start scale smaller for fade-in scaling animation:
-    model.scale.set(1.1, 1.1, 1.1);
-    model.materialsOpacity = 1; // custom flag for fade in
 
-    // Animate scale and opacity fade-in after ready:
- 
-    model.traverse((child) => {
-      if (child.isMesh && child.material) {
-        child.material.opacity = 0;
-        gsap.to(child.material, {
-          opacity: dimmed ? 0 : 1,
-          duration: 1.2,
-          ease: "power2.out",
-          delay: 0,
+    const hasPlayed = localStorage.getItem('heroAnimationPlayed') === 'true';
+
+    if (hasPlayed) {
+      // Instantly set final state
+      model.scale.set(1.1, 1.1, 1.1);
+      model.rotation.set(0, 1.75, 0);
+      return;
+    }
+
+    // Start smaller & unrotated
+    model.scale.set(0.8, 0.8, 0.8);
+    model.rotation.set(0, 0, 0);
+
+    // Play when hero enters view
+    ScrollTrigger.create({
+      trigger: '#hero',
+      start: 'top center',
+      once: true,
+      onEnter: () => {
+        gsap.to(model.scale, {
+          x: 1.1,
+          y: 1.1,
+          z: 1.1,
+          duration: 2,
+          ease: 'power2.inOut',
         });
-      }
+        gsap.to(model.rotation, {
+          y: 1.75,
+          duration: 2,
+          ease: 'power2.inOut',
+          onComplete: () => {
+            localStorage.setItem('heroAnimationPlayed', 'true');
+          },
+        });
+      },
     });
-  }, [center, ready, dimmed]);
+  }, [center, ready]);
 
-  // ScrollTrigger animation for Z position & rotation between sections
+  // Scroll animations
   useEffect(() => {
-  if (!modelRef.current || !animate || !ready) return;
-  const model = modelRef.current;
+    if (!modelRef.current || !animate || !ready) return;
+    const model = modelRef.current;
 
-  const initialPos = new Vector3(-center.x, -center.y, -center.z);
-  const featuresPos = new Vector3(-3 - center.x, -center.y, -1);
-  const viewerPos = new Vector3(-center.x, -center.y, -1);
+    const featuresPos = new Vector3(-3 - center.x, -center.y, -1);
+    const viewerPos = new Vector3(-center.x, -center.y, -1);
 
-  // Immediately set position for consistency
-  model.position.copy(initialPos);
+    const tlHeroToFeatures = gsap.timeline({
+      scrollTrigger: {
+        trigger: '#features',
+        start: 'top bottom',
+        end: 'top center',
+        scrub: 2,
+      },
+    });
 
-  // Flag to track if load animation ran
-  let loadAnimationDone = false;
+    tlHeroToFeatures
+      .to(model.position, { z: 2, duration: 1.5, ease: 'power2.inOut' }, 'same1')
+      .to(model.rotation, { y: -0.4, x: -0.3, duration: 1.5, ease: 'power2.inOut' }, 'same1')
+      .to(model.position, { z: featuresPos.z, x: featuresPos.x, duration: 1.5, ease: 'power2.inOut' });
 
-  // Animate scale and rotation on first load ONLY
-  gsap.fromTo(model.scale,
-    { x: 0.8, y: 0.8, z: 0.8 },
-    {
-      x: 1.1,
-      y: 1.1,
-      z: 1.1,
-      duration: 1.2,
-      ease: "power2.out",
-      onComplete: () => { loadAnimationDone = true; },
-    }
-  );
+    const tlFeaturesToViewer = gsap.timeline({
+      scrollTrigger: {
+        trigger: '#viewer',
+        start: 'top bottom',
+        end: 'top center',
+        scrub: 2,
+      },
+    });
 
-  gsap.fromTo(model.rotation,
-    { x: 0, y: 0, z: 0 },
-    {
-      x: 0,
-      y: 1.75,
-      z: 0,
-      duration: 1.2,
-      ease: "power2.out",
-    }
-  );
+    tlFeaturesToViewer
+      .to(model.position, { z: 2, duration: 1.6, ease: 'power2.inOut' }, 'same2')
+      .to(model.position, { x: viewerPos.x, y: viewerPos.y, z: viewerPos.z, duration: 1.6, ease: 'power2.inOut' }, "-=1.4")
+      .to(model.rotation, { y: 1, duration: 1.6, ease: 'power2.inOut' }, 'same2')
 
-  // ScrollTrigger for hero -> features
-  const tlHeroToFeatures = gsap.timeline({
-    scrollTrigger: {
-      trigger: '#features',
-      start: 'top bottom',
-      end: 'top center',
-      scrub: 1.5,
-      onEnterBack: () => {
-        // When scrolling back to hero from features,
-        // immediately jump to final scale & rotation (no replay)
-        if (loadAnimationDone) {
-          gsap.set(model.scale, { x: 1.1, y: 1.1, z: 1.1 });
-          gsap.set(model.rotation, { x: 0, y: 1.75, z: 0 });
-        }
-      }
-    },
-  });
+    return () => {
+      tlHeroToFeatures.scrollTrigger?.kill();
+      tlFeaturesToViewer.scrollTrigger?.kill();
+      tlHeroToFeatures.kill();
+      tlFeaturesToViewer.kill();
+    };
+  }, [center, animate, ready]);
 
-  tlHeroToFeatures
-    .to(model.position, {
-      z: 2,
-      duration: 0.5,
-      ease: "power2.inOut",
-    })
-    .to(model.rotation, {
-      y: 1.2, // example rotation during scroll
-      duration: 0.7,
-      ease: "power2.inOut",
-    }, "<0.1")
-    .to(model.position, {
-      z: featuresPos.z,
-      x: featuresPos.x,
-      duration: 0.7,
-      ease: "power2.inOut",
-    }, "<0.1");
-
-  // ScrollTrigger for features -> viewer
-  const tlFeaturesToViewer = gsap.timeline({
-    scrollTrigger: {
-      trigger: '#viewer',
-      start: 'top bottom',
-      end: 'top center',
-      scrub: 1.5,
-    },
-  });
-
-  tlFeaturesToViewer
-    .to(model.position, {
-      x: viewerPos.x,
-      y: viewerPos.y,
-      z: viewerPos.z,
-      duration: 1,
-      ease: "power2.inOut",
-    })
-    .to(model.rotation, {
-      y: 1.75,
-      duration: 1,
-      ease: "power2.inOut",
-    }, "<");
-
-  return () => {
-    tlHeroToFeatures.scrollTrigger?.kill();
-    tlFeaturesToViewer.scrollTrigger?.kill();
-    tlHeroToFeatures.kill();
-    tlFeaturesToViewer.kill();
-  };
-}, [center, animate, ready]);
-
-
-
-  // Floating effect (unchanged)
+  // Floating effect
   useFrame((state) => {
     const model = modelRef.current;
     if (!model || !animate) return;
@@ -242,7 +190,7 @@ const HeadphoneModel = ({ colorOption, dimmed, animate = true, draggable = false
     }
   });
 
-  // Drag handling (unchanged)
+  // Drag handling
   useEffect(() => {
     if (!draggable || !modelRef.current) return;
     let isDragging = false;
@@ -278,7 +226,6 @@ const HeadphoneModel = ({ colorOption, dimmed, animate = true, draggable = false
     <primitive
       ref={modelRef}
       object={scene}
-      // scale is animated via GSAP, initial scale set in effect
       position={[-center.x, -center.y, -center.z]}
       visible={ready}
     />

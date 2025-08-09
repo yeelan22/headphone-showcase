@@ -1,6 +1,5 @@
 import React from 'react';
 import { ShoppingCart, Menu, User } from 'lucide-react';
-import  logo  from "../assets/apple-logo.png"
 export const Navbar = () => {
   const navLinks = [
     { name: 'Home', href: '#' },
@@ -15,7 +14,7 @@ export const Navbar = () => {
       <div className="flex items-center gap-6">
         {/* Apple-style logo */}
         <a href="#" className='h-6 w-6'>
-            <img src={logo} alt="apple-logo" />
+            <img src="/assets/apple-logo.png" alt="apple-logo" />
         </a>
 
         {/* Navigation links (hidden on mobile) */}
