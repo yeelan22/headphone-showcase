@@ -15,7 +15,7 @@ export default function FeatureStepper({ activeStep, setActiveStep }) {
       <div className="relative flex flex-col items-center justify-between h-full pt-12">
         
         {/* 🔧 Responsive Vertical Line from first item to dot */}
-        <div className="absolute top-0 bottom-2 left-1/2 w-[2px] bg-gray-800 -translate-x-1/2 z-[-1]" />
+        <div className="absolute top-0 bottom-2 left-1/2 w-[1px] bg-gray-800 -translate-x-1/2 z-[-1]" />
 
         {/* 🔢 Stepper Circles */}
         {steps.map((num) => (
@@ -23,13 +23,13 @@ export default function FeatureStepper({ activeStep, setActiveStep }) {
             key={num}
             onClick={() => handleClick(num)}
             className={`
-              w-10 h-10 rounded-full flex items-center justify-center font-semibold text-sm
+             w-10 h-10 rounded-full flex items-center justify-center font-semibold text-sm
               transition-all duration-300 ease-in-out cursor-pointer
               hover:scale-110 hover:shadow-lg
               ${
                 num === activeStep
                   ? 'bg-gradient-to-br from-cyan-400 to-secondary-accent text-white shadow-md'
-                  : 'bg-gray-800 text-secondary-text'
+                  : 'bg-gray-800 text-secondary-text '
               }
             `}
           >
